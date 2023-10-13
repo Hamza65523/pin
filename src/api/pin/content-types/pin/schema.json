@@ -12,7 +12,7 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "pin": {
+    "name": {
       "type": "string"
     },
     "latitude": {
@@ -21,11 +21,31 @@
     "longitude": {
       "type": "string"
     },
-    "resetPasswordToken": {
+    "address": {
       "type": "string"
     },
-    "confirmationToken": {
+    "pic": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "locationType": {
       "type": "string"
+    },
+    "resetToken": {
+      "type": "string"
+    },
+    "pin": {
+      "type": "string"
+    },
+    "expireToken": {
+      "type": "datetime"
     }
   }
 }

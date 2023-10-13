@@ -1,10 +1,11 @@
 'use strict';
-
+const {getService} = require("@strapi/plugin-users-permissions/server/utils");
 /**
- *  pin controller
+ * A set of functions called "actions" for `pin`
  */
 
-const { createCoreController } = require('@strapi/strapi').factories;
+const {createCoreController} = require('@strapi/strapi').factories;
+
 function generateRandomPIN() {
   const length = 6; // You can adjust the length as needed
   const characters = '0123456789';
@@ -15,159 +16,56 @@ function generateRandomPIN() {
   }
   return pin;
 }
+function generateRandomToken(length) {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let token = '';
 
-module.exports = createCoreController('api::pin.pin',({strapi})=>({
-    // Method 2: Wrapping a core action (leaves core logic in place)
-    async find(ctx) {
-        
-      // some custom logic here
-      ctx.query = { ...ctx.query, local: 'en' }
-  
-      // Calling the default core action
-      const { data, meta } = await super.find(ctx);
-  
-      // some more custom logic
-      meta.date = Date.now()
-  
-      return { data, meta };
-    },
+  for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      token += characters[randomIndex];
+  }
+
+  return token;
+}
+
+module.exports = createCoreController('api::pin.pin', ({strapi}) => ({
+
+
+  async createPin(ctx){
+    const {  latitude, longitude,name,address,locationType,customMinutes} = ctx.request.body;
+    const posts = await strapi.db.query('api::pin.pin').create({data:{
+      latitude,
+      longitude,
+      address, 
+      name,
+      locationType,
+      pin:generateRandomPIN(),
+      resetToken:generateRandomToken(8),
+      expireToken:new Date(Date.now() + customMinutes * 60 * 1000), 
+    }});
+    const sanitizedEntity = await this.sanitizeOutput(posts, ctx);
     
-    async create(ctx) {
-      ctx.query = { ...ctx.query, local: 'en' }
-  
-      // Calling the default core action
-      ctx.request.body.data={
-        ...ctx.request.body.data,
-        pin:generateRandomPIN()
-      }
-      const { data, meta } = await super.create(ctx);
-  
-      // some more custom logic
-      meta.date = Date.now()
-  
-      return { data, meta };
-    },
-  
-  }));
+    return this.transformResponse(sanitizedEntity);
+  },
+  async getAllPin(ctx){
+    const posts = await strapi.db.query('api::pin.pin').findMany();
+   
+    const sanitizedEntity = await this.sanitizeOutput(posts, ctx);
+    return this.transformResponse(sanitizedEntity);
+  },
+  async getPinId(ctx){
+    const pin = ctx.request.params.pin;
+console.log(pin)
+    const posts = await strapi.db.query('api::pin.pin').findOne({
+      where: {"pin": pin}});
+    // .findOne({where: {"PrimaryPhone": phone}});
+    // const posts = await strapi.db.query('api::post.post').findMany({
+    //   where: {
+    //     "users_permissions_user": id,
+    //   },
+    // });
+    const sanitizedEntity = await this.sanitizeOutput(posts, ctx);
+    return this.transformResponse(sanitizedEntity);
+  },
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//   const twilio = {
-//     id: "YOUR_TWILIO_ACCOUNT_ID",
-//     token: "TWILIO_ACCOUNT_TOKEN",
-//     phone: "TWILIO_PHONE_NO"
-//   }
-  
-//   const smsClient = require('twilio')(twilio.id, twilio.token);
-  
-//   async create(ctx) {
-  
-//       const { phone, username } = ctx.request.body;
-  
-//       if (!phone) return ctx.badRequest('missing.phone');
-//       if (!username) return ctx.badRequest('missing.username');
-  
-  
-//       const userWithThisNumber = await strapi
-//         .query('user', 'users-permissions')
-//         .findOne({ phone });
-  
-//       if (userWithThisNumber) {
-//         return ctx.badRequest(
-//           null,
-//           formatError({
-//             id: 'Auth.form.error.phone.taken',
-//             message: 'Phone already taken.',
-//             field: ['phone'],
-//           })
-//         );
-//       }
-  
-//       const token = Math.floor(Math.random() * 90000) + 10000;
-      
-//       const user = {
-//               username,
-//         phone,
-//         provider: 'local',
-//         token
-//       };
-  
-//       const advanced = await strapi
-//         .store({
-//           environment: '',
-//           type: 'plugin',
-//           name: 'users-permissions',
-//           key: 'advanced',
-//         })
-//         .get();
-  
-//       const defaultRole = await strapi
-//         .query('role', 'users-permissions')
-//         .findOne({ type: advanced.default_role }, []);
-  
-//       user.role = defaultRole.id;
-  
-  
-//       try {
-//         const data = await strapi.plugins['users-permissions'].services.user.add(user);
-//         await smsClient.messages.create({
-//           to: phone,
-//           from: twilio.phone,
-//           body: `Your verification code is ${token}`
-//         })
-//         ctx.created(sanitizeUser(data));
-//       } catch (error) {
-//         ctx.badRequest(null, formatError(error));
-//       }
-//     }
-
-
-
-
-// async verifyAccount(ctx) {
-
-//     const { phone, token } = ctx.request.body;
-
-//     if (!phone) return ctx.badRequest('missing.phone');
-//     if (!token) return ctx.badRequest('missing.token');
-
-
-//     const verifyUserCode = await strapi
-//       .query('user', 'users-permissions')
-//       .findOne({ phone, token });
-
-//     if (!verifyUserCode) {
-//       return ctx.badRequest(
-//         null,
-//         formatError({
-//           id: 'Auth.form.error.code.invalid',
-//           message: 'Invalid Code or Number',
-//           field: ['phone'],
-//         })
-//       );
-//     }
-
-//  let updateData = {
-//       token: '',
-//       confirmed: true
-//     };
-
-
-//     const data = await strapi.plugins['users-permissions'].services.user.edit({ id }, updateData);
-//     const jwt = strapi.plugins['users-permissions'].services.jwt.issue({
-//       id: data.id,
-//     })
-//     ctx.send({ jwt, user: sanitizeUser(data) });
-//   }
+}));

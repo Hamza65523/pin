@@ -1,3 +1,4 @@
+
 export default {
   config: {
     locales: [
@@ -31,5 +32,6 @@ export default {
   },
   bootstrap(app) {
     console.log(app);
+
   },
 };
