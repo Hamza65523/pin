@@ -37,6 +37,24 @@ module.exports = {
          middlewares: [],
        },
       },
+      {
+       method: 'DELETE',
+       path: '/pin/:pin',
+       handler: 'pin.deletePin',
+       config: {
+         policies: [],
+         middlewares: [],
+       },
+      },
+      {
+       method: 'PUT',
+       path: '/pin/:pin',
+       handler: 'pin.updatePin',
+       config: {
+         policies: [],
+         middlewares: [],
+       },
+      },
     ],
   };
   

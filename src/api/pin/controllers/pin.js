@@ -33,6 +33,9 @@ module.exports = createCoreController('api::pin.pin', ({strapi}) => ({
 
   async createPin(ctx){
     const {  latitude, longitude,name,address,locationType,customMinutes} = ctx.request.body;
+    if (!latitude||!longitude||!name||!address||!locationType||!customMinutes) {
+      return ctx.throw(404, 'all fields are required bro please yar');
+    }
     const posts = await strapi.db.query('api::pin.pin').create({data:{
       latitude,
       longitude,
@@ -55,10 +58,12 @@ module.exports = createCoreController('api::pin.pin', ({strapi}) => ({
   },
   async getPinId(ctx){
     const pin = ctx.request.params.pin;
-console.log(pin)
-const posts = await strapi.db.query('api::pin.pin').findOne({
+  const posts = await strapi.db.query('api::pin.pin').findOne({
   where: {"pin": pin,"expireToken":{$gt:Date.now()}}
 });
+if (!posts) {
+  return ctx.throw(404, 'Pin not found');
+}
 
     // .findOne({where: {"PrimaryPhone": phone}});
     // const posts = await strapi.db.query('api::post.post').findMany({
@@ -69,5 +74,50 @@ const posts = await strapi.db.query('api::pin.pin').findOne({
     const sanitizedEntity = await this.sanitizeOutput(posts, ctx);
     return this.transformResponse(sanitizedEntity);
   },
+  async deletePin(ctx){
+    const pinId = ctx.request.params.pin; // Assuming the parameter is 'id'
+    const deletedPin = await strapi.db.query('api::pin.pin').delete({
+        where: { pin: pinId }
+    });
+
+    if (!deletedPin) {
+        return ctx.throw(404, 'Pin not found');
+    }
+
+    return this.transformResponse(deletedPin);
+  },
+  async updatePin(ctx) {
+    const pinId = ctx.request.params.pin;
+    const {
+        latitude,
+        longitude,
+        name,
+        address,
+        locationType,
+        customMinutes
+    } = ctx.request.body;
+
+    const updatedPin = await strapi.db.query('api::pin.pin').update({
+        where: {
+            pin: pinId
+        },
+        data: {
+            latitude,
+            longitude,
+            address,
+            name,
+            locationType,
+            resetToken: generateRandomToken(8),
+            expireToken: new Date(Date.now() + customMinutes * 60 * 1000),
+        }
+    });
+
+    if (!updatedPin) {
+        return ctx.throw(404, 'Pin not found');
+    }
+
+    const sanitizedEntity = await this.sanitizeOutput(updatedPin, ctx);
+    return this.transformResponse(sanitizedEntity);
+  }
 
 }));
