@@ -56,8 +56,10 @@ module.exports = createCoreController('api::pin.pin', ({strapi}) => ({
   async getPinId(ctx){
     const pin = ctx.request.params.pin;
 console.log(pin)
-    const posts = await strapi.db.query('api::pin.pin').findOne({
-      where: {"pin": pin}});
+const posts = await strapi.db.query('api::pin.pin').findOne({
+  where: {"pin": pin,"expireToken":{$gt:Date.now()}}
+});
+
     // .findOne({where: {"PrimaryPhone": phone}});
     // const posts = await strapi.db.query('api::post.post').findMany({
     //   where: {
